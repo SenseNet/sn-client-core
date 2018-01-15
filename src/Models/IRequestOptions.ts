@@ -145,3 +145,59 @@ export interface IActionOptions<TBody> {
      */
     body: TBody;
 }
+
+/**
+ * Options for uploading content
+ */
+export interface IUploadOptions<T> {
+    /**
+     * The name of the content type, e.g.: File
+     */
+    contentTypeName: string;
+    /**
+     * Name of the binary property on the content, e.g.: Binary
+     */
+    binaryPropertyName: string;
+    /**
+     * Enable overwriting a file if already exists
+     */
+    overwrite: boolean;
+    /**
+     * Additional post body options
+     */
+    body?: any;
+
+    /**
+     * Additional OData options
+     */
+    odataOptions?: IODataParams<T>;
+    /**
+     * The path of the parent content
+     */
+    parentPath: string;
+}
+
+/**
+ * Options for uploading a File into the repository
+ */
+export interface IUploadFileOptions<T> extends IUploadOptions<T> {
+    /**
+     * The File instance
+     */
+    file: File;
+
+}
+
+/**
+ * Options for uploading a text as a binary file into the repository
+ */
+export interface IUploadTextOptions<T> extends IUploadOptions<T> {
+    /**
+     * The text to be uploaded
+     */
+    text: string;
+    /**
+     * The name of the File object
+     */
+    fileName: string;
+}
