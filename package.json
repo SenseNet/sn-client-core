@@ -1,12 +1,11 @@
 {
   "name": "@sensenet/client-core",
-  "version": "1.0.0-development.1",
+  "version": "1.0.0-development.2",
   "description": "Core Client packages for sensenet ECM",
   "main": "./dist/index.js",
   "files": [
     "dist",
-    "src",
-    "test"
+    "src"
   ],
   "scripts": {
     "precommit": "npm run test",
@@ -26,7 +25,6 @@
     "ecm",
     "javascript",
     "REST",
-    "ajax",
     "API"
   ],
   "publishConfig": {
@@ -56,11 +54,11 @@
     "@sensenet/query": "^1.0.0-development.1"
   },
   "devDependencies": {
-    "@types/chai": "4.0.10",
+    "@types/chai": "4.1.0",
     "@types/mocha": "^2.2.46",
     "chai": "4.1.2",
     "codecov": "^3.0.0",
-    "mocha": "4.0.1",
+    "mocha": "4.1.0",
     "nyc": "^11.0.2",
     "rimraf": "^2.6.1",
     "tslint": "^5.8.0",
