@@ -29,7 +29,7 @@
   ],
   "publishConfig": {
     "access": "public"
-  },  
+  },
   "author": "Sense/Net <snteam@sensenet.com> (http://sensenet.com/)",
   "license": "GPL-2.0",
   "nyc": {
