@@ -1,12 +1,11 @@
 {
   "name": "@sensenet/client-core",
-  "version": "1.0.0-development.1",
+  "version": "1.0.0-development.2",
   "description": "Core Client packages for sensenet ECM",
   "main": "./dist/index.js",
   "files": [
     "dist",
-    "src",
-    "test"
+    "src"
   ],
   "scripts": {
     "precommit": "npm run test",
@@ -26,7 +25,6 @@
     "ecm",
     "javascript",
     "REST",
-    "ajax",
     "API"
   ],
   "author": "Sense/Net <snteam@sensenet.com> (http://sensenet.com/)",
