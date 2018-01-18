@@ -6,6 +6,7 @@ import { IODataBatchResponse } from "../Models/IODataBatchResponse";
 import { IODataCollectionResponse } from "../Models/IODataCollectionResponse";
 import { IODataResponse } from "../Models/IODataResponse";
 import { IActionOptions, ICopyOptions, IDeleteOptions, ILoadCollectionOptions, ILoadOptions, IMoveOptions, IPatchOptions, IPostOptions, IPutOptions } from "../Models/IRequestOptions";
+import { SchemaStore } from "../Schemas/SchemaStore";
 import { ConstantContent } from "./ConstantContent";
 import { ODataUrlBuilder } from "./ODataUrlBuilder";
 import { RepositoryConfiguration } from "./RepositoryConfiguration";
@@ -223,6 +224,7 @@ export class Repository implements IDisposable {
     constructor(
         config?: Partial<RepositoryConfiguration>,
         private fetchMethod: GlobalFetch["fetch"] = window && window.fetch && window.fetch.bind(window),
+        public schemas: SchemaStore = new SchemaStore(),
     ) {
         this.configuration = new RepositoryConfiguration(config);
     }
