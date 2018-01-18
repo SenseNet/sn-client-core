@@ -13,7 +13,7 @@ export class SchemaStore {
     /**
      * Updates the schema information in the store and inv
      */
-    public SetSchemas(newSchemas: Schema[]) {
+    public setSchemas(newSchemas: Schema[]) {
         this.schemas = newSchemas;
         this.byNameSchemaCache = new Map<string, Schema>();
     }
@@ -26,15 +26,15 @@ export class SchemaStore {
      * var genericContentSchema = SenseNet.Content.getSchema(Content);
      * ```
      */
-    public GetSchema<TType>(currentType: { new(...args: any[]): TType }): Schema {
-        return this.GetSchemaByName(currentType.name);
+    public getSchema<TType>(currentType: { new(...args: any[]): TType }): Schema {
+        return this.getSchemaByName(currentType.name);
     }
 
     /**
      * Returns the Content Type Schema for the provided content type name
      * @param {string} contentTypeName The name of the content type
      */
-    public GetSchemaByName(contentTypeName: string) {
+    public getSchemaByName(contentTypeName: string) {
         if (!this.byNameSchemaCache) {
             this.byNameSchemaCache = new Map<string, Schema>();
         }
@@ -44,10 +44,10 @@ export class SchemaStore {
         }
         let schema = this.schemas.find((s) => s.ContentTypeName === contentTypeName) as Schema;
         if (!schema) {
-            return this.GetSchema(GenericContent);
+            return this.getSchema(GenericContent);
         }
         schema = Object.assign({}, schema);
-        const parentSchema = schema.ParentTypeName && this.GetSchemaByName(schema.ParentTypeName);
+        const parentSchema = schema.ParentTypeName && this.getSchemaByName(schema.ParentTypeName);
 
         if (parentSchema) {
             schema.FieldSettings = [...schema.FieldSettings, ...parentSchema.FieldSettings];

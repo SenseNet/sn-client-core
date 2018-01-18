@@ -32,7 +32,8 @@
   "nyc": {
     "exclude": [
       "temp/test/**/*.*",
-      "temp/src/**/I*.js"
+      "temp/src/**/I*.js",
+      "**/index.js"
     ],
     "include": "temp/src/**/*.*",
     "check-coverage": true,
