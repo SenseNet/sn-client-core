@@ -35,7 +35,8 @@
   "nyc": {
     "exclude": [
       "temp/test/**/*.*",
-      "temp/src/**/I*.js"
+      "temp/src/**/I*.js",
+      "**/index.js"
     ],
     "include": "temp/src/**/*.*",
     "check-coverage": true,
@@ -50,7 +51,7 @@
   "homepage": "https://sensenet.com",
   "dependencies": {
     "@sensenet/client-utils": "^1.0.0-development.2",
-    "@sensenet/default-content-types": "^1.0.0-development.1",
+    "@sensenet/default-content-types": "^1.0.0-development.3",
     "@sensenet/query": "^1.0.0-development.1"
   },
   "devDependencies": {
