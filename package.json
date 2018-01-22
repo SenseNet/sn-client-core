@@ -48,7 +48,7 @@
   "homepage": "https://sensenet.com",
   "dependencies": {
     "@sensenet/client-utils": "^1.0.0-development.2",
-    "@sensenet/default-content-types": "^1.0.0-development.3",
+    "@sensenet/default-content-types": "^1.0.0-development.4",
     "@sensenet/query": "^1.0.0-development.1"
   },
   "devDependencies": {
