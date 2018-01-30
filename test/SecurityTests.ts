@@ -7,9 +7,15 @@ import { Security } from "../src/Repository/Security";
 export const securityTests = describe("Security", () => {
 
     let security: Security;
+    let repository: Repository;
 
     beforeEach(() => {
-        security = new Security(new Repository({}, async (...args: any[]) => ({ok: true, json: async () => ({})} as any)));
+        repository = new Repository({}, async (...args: any[]) => ({ok: true, json: async () => ({})} as any));
+        security = new Security(repository);
+    });
+
+    afterEach(() => {
+        repository.dispose();
     });
 
     it("Should execute setPermissionInheritance", () => {
@@ -28,8 +34,24 @@ export const securityTests = describe("Security", () => {
         expect(security.getPermissions(1, "root/users/user1")).to.be.instanceof(Promise);
     });
 
+    it("Should execute getPermissions w/o identity path", () => {
+        expect(security.getPermissions(1)).to.be.instanceof(Promise);
+    });
+
     it("Should execute hasPermission", () => {
         expect(security.hasPermission(1, ["See"], "root/users/user1")).to.be.instanceof(Promise);
+    });
+
+    it("Should evaulate if hasPermission returns false", async () => {
+        // tslint:disable-next-line:no-string-literal
+        repository["fetchMethod"] = async () => {
+            return {
+                ok: true,
+                text: async () => "false",
+            } as any;
+        };
+        const hasPermission = await security.hasPermission(1, ["See"], "root/users/user1");
+        expect(hasPermission).to.be.eq(false);
     });
 
     it("Should throw if hasPermission fails", async () => {
