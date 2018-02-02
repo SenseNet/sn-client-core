@@ -1,7 +1,7 @@
 import { IDisposable, PathHelper } from "@sensenet/client-utils";
+import { IActionModel } from "@sensenet/default-content-types";
 import { BypassAuthentication } from "../Authentication/BypassAuthentication";
 import { IAuthenticationService } from "../Authentication/IAuthenticationService";
-import { IActionModel } from "../index";
 import { IContent } from "../Models/IContent";
 import { IODataBatchResponse } from "../Models/IODataBatchResponse";
 import { IODataCollectionResponse } from "../Models/IODataCollectionResponse";

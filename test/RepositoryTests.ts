@@ -1,6 +1,7 @@
 import { using } from "@sensenet/client-utils";
+import { IActionModel } from "@sensenet/default-content-types";
 import { expect } from "chai";
-import { IActionModel, Repository } from "../src";
+import { Repository } from "../src";
 import { IContent } from "../src/Models/IContent";
 import { IODataCollectionResponse } from "../src/Models/IODataCollectionResponse";
 import { IODataResponse } from "../src/Models/IODataResponse";
