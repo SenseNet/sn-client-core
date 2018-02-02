@@ -1,6 +1,8 @@
 import { PathHelper } from "@sensenet/client-utils";
 import { Group, IdentityKind, Inheritance, PermissionLevel, PermissionRequestBody, User } from "@sensenet/default-content-types";
+import { IContent, IPermissionEntry } from "../index";
 import { IODataCollectionResponse } from "../Models/IODataCollectionResponse";
+import { IODataParams } from "../Models/IODataParams";
 import { IPermissionResponseModel } from "../Models/ISecurityModels";
 import { Repository } from "./Repository";
 
@@ -17,12 +19,12 @@ export class Security {
      * @returns {Promise<IPermissionResponseModel>} A promise with a response model
      */
     public setPermissionInheritance = (idOrPath: string | number, inheritance: Inheritance) =>
-        this.repository.executeAction<{ inheritance: Inheritance }, void>({
+        this.repository.executeAction<{ r: Inheritance }, void>({
             name: "SetPermissions",
             idOrPath,
             method: "POST",
             body: {
-                inheritance: inheritance as Inheritance,
+                r: inheritance as Inheritance,
             },
         })
 
@@ -33,13 +35,13 @@ export class Security {
      * @param {PermissionRequestBody} permissionRequestBody inheritance: break or unbreak
      * @returns {Promise<IPermissionResponseModel>} A promise with a response model
      */
-    public setPermissions = (idOrPath: string | number, permissionRequestBody: PermissionRequestBody): Promise<void> =>
-        this.repository.executeAction<{ entryList: PermissionRequestBody }, void>({
+    public setPermissions = (idOrPath: string | number, permissionRequestBody: PermissionRequestBody) =>
+        this.repository.executeAction<{ r: PermissionRequestBody }, void>({
             name: "SetPermissions",
             idOrPath,
             method: "POST",
             body: {
-                entryList: permissionRequestBody as PermissionRequestBody,
+                r: permissionRequestBody as PermissionRequestBody,
             },
         })
 
@@ -49,7 +51,7 @@ export class Security {
      * @param {string | number} contentIdOrPath The path or id for the content
      * @returns {Promise<IPermissionResponseModel>} A promise with the permission response
      */
-    public getAllPermissions = (contentIdOrPath: string | number): Promise<IPermissionResponseModel> =>
+    public getAllPermissions = (contentIdOrPath: string | number) =>
         this.repository.executeAction<undefined, IPermissionResponseModel>({
             idOrPath: contentIdOrPath,
             name: "GetPermissions",
@@ -63,8 +65,8 @@ export class Security {
      * @param {string | number} contentIdOrPath The path or id for the content
      * @returns {Promise<IPermissionResponseModel>} A promise with the permission response
      */
-    public getPermissionsForIdentity = (contentIdOrPath: string | number, identityPath: string): Promise<IPermissionResponseModel> =>
-        this.repository.executeAction<{ identity: string }, IPermissionResponseModel>({
+    public getPermissionsForIdentity = (contentIdOrPath: string | number, identityPath: string) =>
+        this.repository.executeAction<{ identity: string }, IPermissionEntry>({
             idOrPath: contentIdOrPath,
             name: "GetPermissions",
             method: "GET",
@@ -109,17 +111,22 @@ export class Security {
      * @param  {IdentityKind} kind The value can be: All, Users, Groups, OrganizationalUnits, UsersAndGroups, UsersAndOrganizationalUnits, GroupsAndOrganizationalUnits
      * @returns {Promise<>} An observable with the collection of the related users and / or groups
      */
-    public getRelatedIdentities = (contentIdOrPath: (string | number),
-                                   level: PermissionLevel,
-                                   kind: IdentityKind) =>
-        this.repository.executeAction<{}, IODataCollectionResponse<User | Group>>({
+    public getRelatedIdentities = <TIdentityType extends (User | Group) = User | Group>(
+        options: {
+                contentIdOrPath: (string | number),
+                level: PermissionLevel,
+                kind: IdentityKind,
+                oDataOptions?: IODataParams<TIdentityType>,
+            } ) =>
+        this.repository.executeAction<{}, IODataCollectionResponse<TIdentityType>>({
             name: "GetRelatedIdentities",
-            idOrPath: contentIdOrPath,
+            idOrPath: options.contentIdOrPath,
             method: "POST",
             body: {
-                level,
-                kind,
+                level: options.level,
+                kind: options.kind,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
@@ -128,21 +135,32 @@ export class Security {
      * @param {PermissionLevel} level The value is "AllowedOrDenied". "Allowed" or "Denied" are not implemented yet.
      * @param {boolean} explicitOnlyThe value "true" is required because "false" is not implemented yet.
      * @param {string} member Fully qualified path of the selected identity (e.g. /Root/IMS/BuiltIn/Portal/Visitor).
-     * @param {string[]} includedTypes An item can increment the counters if its type or any ancestor type is found in the 'includedTypes'. Null means filtering off. If the array is empty, there
-     * is no element that increases the counters. This filter can reduce the execution speed dramatically so do not use if it is possible.
+     * @param {string[]} includedTypes An item can increment the counters if its type or any ancestor type is found in the 'includedTypes'.
+     * Null means filtering off. If the array is empty, there is no element that increases the counters.
+     * This filter can reduce the execution speed dramatically so do not use if it is possible.
      * @returns {Promise<IODataCollectionResponse<TMemberType>>} A promise with the related users / groups
      */
-    public getRelatedPermissions = <TMemberType extends (User | Group) = (User | Group)>(contentIdOrPath: string | number, level: PermissionLevel, explicitOnly: boolean, memberPath: string, includedTypes?: string[]): Promise<IODataCollectionResponse<TMemberType>> =>
-        this.repository.executeAction({
+    public getRelatedPermissions = <TMemberType extends (User | Group) = (User | Group)>(
+            options: {
+                contentIdOrPath: string | number,
+                level: PermissionLevel,
+                explicitOnly: boolean,
+                memberPath: string,
+                includedTypes?: string[]
+                oDataOptions?: IODataParams<TMemberType>,
+            }) =>
+
+        this.repository.executeAction<any, IODataCollectionResponse<TMemberType>>({
             name: "GetRelatedPermissions",
-            idOrPath: contentIdOrPath,
+            idOrPath: options.contentIdOrPath,
             method: "POST",
             body: {
-                level,
-                explicitOnly,
-                member: memberPath,
-                includedTypes,
+                level: options.level,
+                explicitOnly: options.explicitOnly,
+                member: options.memberPath,
+                includedTypes: options.includedTypes,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
@@ -151,23 +169,36 @@ export class Security {
      * @param {PermissionLevel} level  The value is "AllowedOrDenied". "Allowed" or "Denied" are not implemented yet.
      * @param {boolean} explicitOnly The value "true" is required because "false" is not implemented yet.
      * @param {string} member Fully qualified path of the selected identity (e.g. /Root/IMS/BuiltIn/Portal/Visitor).
-     * @param {string[]} permissions related permission list. Item names are case sensitive. In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
+     * @param {string[]} permissions related permission list. Item names are case sensitive.
+     * In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
      * type name (e.g. ["Open","Save","Custom02"]).
-     * @returns {Promise<>} A promise with the response data
+     * @returns {Promise<>} A promise with the content list
      */
-    public getRelatedItems = (contentIdOrPath: string | number, level: PermissionLevel, explicitOnly: boolean, member: string, permissions: string[]) =>
-        this.repository.executeAction({
+    public getRelatedItems = <TItem extends IContent = IContent>(
+                options: {
+                    contentIdOrPath: string | number,
+                    level: PermissionLevel,
+                    explicitOnly: boolean,
+                    member: string,
+                    permissions: string[],
+                    oDataOptions?: IODataParams<TItem>,
+                }) =>
+        this.repository.executeAction<any, IODataCollectionResponse<TItem>>({
             name: "GetRelatedItems",
-            idOrPath: contentIdOrPath,
+            idOrPath: options.contentIdOrPath,
             method: "POST",
             body: {
-                level, explicitOnly, member, permissions,
+                level: options.level,
+                explicitOnly: options.explicitOnly,
+                member: options.member,
+                permissions: options.permissions,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
-     * This structure is designed for getting tree of content that are permitted or denied for groups/organizational units in the selected subtree. The result content are not in a paged list:
-     * they are organized in a tree.
+     * This structure is designed for getting tree of content that are permitted or denied for groups/organizational units
+     * in the selected subtree. The result content are not in a paged list: they are organized in a tree.
      * @param {number | string } contentIdOrPath Id or path for the content
      * @param {PermissionLevel} level The value is "AllowedOrDenied". "Allowed" or "Denied" are not implemented yet.
      * @param {IdentityKind} kind The value can be: All, Users, Groups, OrganizationalUnits, UsersAndGroups, UsersAndOrganizationalUnits, GroupsAndOrganizationalUnits
@@ -175,78 +206,114 @@ export class Security {
      * type name (e.g. ["Open","Save","Custom02"]).
      * @returns {Promise} Returns an RxJS observable that you can subscribe of in your code.
      */
-     public getRelatedIdentitiesByPermissions = (contentIdOrPath: number | string, level: PermissionLevel, kind: IdentityKind, permissions: string[]) =>
-         this.repository.executeAction({
+     public getRelatedIdentitiesByPermissions = <TIdentity = User | Group>(
+         options: {
+            contentIdOrPath: number | string,
+            level: PermissionLevel,
+            kind: IdentityKind,
+            permissions: string[],
+            oDataOptions?: IODataParams<TIdentity>,
+            },
+        ) =>
+         this.repository.executeAction<any, IODataCollectionResponse<TIdentity>>({
              name: "GetRelatedIdentitiesByPermissions",
-             idOrPath: contentIdOrPath,
+             idOrPath: options.contentIdOrPath,
              method: "POST",
              body: {
-                level, kind, permissions,
+                level: options.level,
+                kind: options.kind,
+                permissions: options.permissions,
              },
+             oDataOptions: options.oDataOptions,
          })
 
     /**
-     * This structure is designed for getting tree of content that are permitted or denied for groups/organizational units in the selected subtree. The result content are not in a paged list:
-     * they are organized in a tree.
+     * This structure is designed for getting tree of content that are permitted or denied for groups/organizational units
+     * in the selected subtree. The result content are not in a paged list: they are organized in a tree.
      * @param {PermissionLevel} level The value is "AllowedOrDenied". "Allowed" or "Denied" are not implemented yet.
      * @param {string} member Fully qualified path of the selected identity (e.g. /Root/IMS/BuiltIn/Portal/Visitor).
-     * @param {string[]} permissions related permission list. Item names are case sensitive. In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
+     * @param {string[]} permissions related permission list. Item names are case sensitive.
+     * In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
      * type name (e.g. ["Open","Save","Custom02"]).
      * @returns {Observable} Returns an RxJS observable that you can subscribe of in your code.
      */
-    public getRelatedItemsOneLevel = (contentIdOrPath: number | string, level: PermissionLevel, member: string, permissions: string[]) =>
-        this.repository.executeAction({
+    public getRelatedItemsOneLevel = <TItem extends IContent = IContent>(
+        options: {
+            contentIdOrPath: number | string,
+            level: PermissionLevel,
+            member: string,
+            permissions: string[],
+            oDataOptions?: IODataParams<TItem>,
+        }) =>
+        this.repository.executeAction<any, IODataCollectionResponse<TItem>>({
             name: "GetRelatedItemsOneLevel",
-            idOrPath: contentIdOrPath,
+            idOrPath: options.contentIdOrPath,
             method: "POST",
             body: {
-                level, member, permissions,
+                level: options.level,
+                member: options.member,
+                permissions: options.permissions,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
-     * Returns a content collection that represents users who have enough permissions to a requested resource. The permissions effect on the user and through direct or indirect group membership
+     * Returns a content collection that represents users who have enough permissions to a requested resource.
+     * The permissions effect on the user and through direct or indirect group membership
      * too. The function parameter is a permission name list that must contain at least one item.
      * @param {number | string} contentIdOrPath The id or path to the content to check
-     * @param {string[]} permissions related permission list. Item names are case sensitive. In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
+     * @param {string[]} permissions related permission list. Item names are case sensitive.
+     * In most cases only one item is used (e.g. "See" or "Save" etc.) but you can pass any permission
      * type name (e.g. ["Open","Save","Custom02"]).
      * @returns {Observable} Returns an RxJS observable that you can subscribe of in your code.
      */
-    public getAllowedUsers = (contentIdOrPath: number | string, permissions: string[]) =>
-        this.repository.executeAction({
-            idOrPath: contentIdOrPath,
+    public getAllowedUsers = <TUser extends User = User>(options: {
+            contentIdOrPath: number | string,
+            permissions: string[],
+            oDataOptions?: IODataParams<TUser>,
+        }) =>
+        this.repository.executeAction<any, IODataCollectionResponse<TUser>>({
+            idOrPath: options.contentIdOrPath,
             name: "GetAllowedUsers",
             method: "POST",
             body: {
-                permissions,
+                permissions: options.permissions,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
-     * Returns a content collection that represents groups where the given user or group is member directly or indirectly. This function can be used only on a resource content that is
+     * Returns a content collection that represents groups where the given user or group is member directly or indirectly.
+     * This function can be used only on a resource content that is
      * Group or User or any inherited type. If the value of the "directOnly" parameter is false, all indirect members are listed.
      * @param {number|string} contentIdOrPath The path or id of the content to check
      * @param {boolean} directOnly If the value of the "directOnly" parameter is false, all indirect members are listed.
      * @returns {Promise} A promise with the response
      */
-    public getParentGroups = (contentIdOrPath: number | string, directOnly: boolean): Promise<{}> =>
-        this.repository.executeAction({
+    public getParentGroups = <TGroup extends Group = Group>(options: {
+            contentIdOrPath: number | string,
+            directOnly: boolean,
+            oDataOptions?: IODataParams<TGroup>,
+        }) =>
+        this.repository.executeAction<any, IODataCollectionResponse<TGroup>>({
             name: "GetParentGroups",
-            idOrPath: contentIdOrPath,
+            idOrPath: options.contentIdOrPath,
             method: "POST",
             body: {
-                directOnly,
+                directOnly: options.directOnly,
             },
+            oDataOptions: options.oDataOptions,
         })
 
     /**
-     * Administrators can add new members to a group using this action. The list of new members can be provided using the 'contentIds' parameter (list of user or group ids).
+     * Administrators can add new members to a group using this action.
+     * The list of new members can be provided using the 'contentIds' parameter (list of user or group ids).
      * @param {string | number} contentIdOrPath A Path or Id to the content to check
      * @param  {number[]} contentIds List of the member ids.
      * @returns {Promise} A Promise with the response object
      */
     public addMembers = (contentIdOrPath: string | number, contentIds: number[]) =>
-        this.repository.executeAction({
+        this.repository.executeAction<{contentIds: number[]}, void>({
             name: "AddMembers",
             idOrPath: contentIdOrPath,
             method: "POST",
@@ -255,13 +322,14 @@ export class Security {
             },
         })
     /**
-     * Administrators can remove members from a group using this action. The list of removable members can be provided using the 'contentIds' parameter (list of user or group ids).
+     * Administrators can remove members from a group using this action.
+     * The list of removable members can be provided using the 'contentIds' parameter (list of user or group ids).
      * @param {string | number} contentIdOrPath A Path or Id to the content to check
      * @param {number[]}  contentIds List of the member ids.
      * @returns {Promise} Returns an RxJS observable that you can subscribe of in your code.
      */
     public removeMembers = (contentIdOrPath: string | number, contentIds: number[]) =>
-        this.repository.executeAction({
+        this.repository.executeAction<{contentIds: number[]}, void>({
             name: "RemoveMembers",
             idOrPath: contentIdOrPath,
             method: "POST",
