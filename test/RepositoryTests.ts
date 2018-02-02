@@ -132,6 +132,7 @@ export const repositoryTests = describe("Repository", () => {
                 const response = await repo.post({
                     parentPath: "Root/Sites/Default_Site",
                     content: ConstantContent.PORTAL_ROOT,
+                    contentType: "Task",
                 });
 
                 expect(response.d).to.be.deep.eq(ConstantContent.PORTAL_ROOT);
@@ -142,6 +143,7 @@ export const repositoryTests = describe("Repository", () => {
                 repo.post({
                     parentPath: "Root/Sites/Default_Site",
                     content: ConstantContent.PORTAL_ROOT,
+                    contentType: "Task",
                 }).then(() => {
                     done("Should throw");
                 }).catch(() => {

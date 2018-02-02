@@ -43,7 +43,11 @@ export interface IPostOptions<TContentType> {
     /**
      * Content data to post. The content type is required.
      */
-    content: Partial<TContentType> & { Type: string };
+    content: Partial<TContentType>;
+
+    contentType: string;
+
+    contentTemplate?: string;
 }
 
 /**

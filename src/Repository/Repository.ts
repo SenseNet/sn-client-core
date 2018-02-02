@@ -101,10 +101,14 @@ export class Repository implements IDisposable {
     public async post<TContentType extends IContent>(options: IPostOptions<TContentType>): Promise<IODataResponse<TContentType>> {
         const params = ODataUrlBuilder.buildUrlParamString(this.configuration);
         const path = PathHelper.joinPaths(this.configuration.repositoryUrl, this.configuration.oDataToken, options.parentPath);
+        const postBody: Partial<TContentType> & {__ContentType: string, __ContentTemplate?: string} = Object.assign({}, options.content) as any;
+        postBody.__ContentType = options.contentType;
+        postBody.__ContentTemplate = options.contentTemplate;
+
         const response = await this.fetch(`${path}?${params}`, {
             credentials: "include",
             method: "POST",
-            body: JSON.stringify(options.content),
+            body: JSON.stringify(postBody),
         });
         if (!response.ok) {
             throw Error(response.statusText);
