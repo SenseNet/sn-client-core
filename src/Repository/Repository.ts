@@ -1,11 +1,12 @@
 import { IDisposable, PathHelper } from "@sensenet/client-utils";
 import { BypassAuthentication } from "../Authentication/BypassAuthentication";
 import { IAuthenticationService } from "../Authentication/IAuthenticationService";
+import { IActionModel } from "../index";
 import { IContent } from "../Models/IContent";
 import { IODataBatchResponse } from "../Models/IODataBatchResponse";
 import { IODataCollectionResponse } from "../Models/IODataCollectionResponse";
 import { IODataResponse } from "../Models/IODataResponse";
-import { IActionOptions, ICopyOptions, IDeleteOptions, ILoadCollectionOptions, ILoadOptions, IMoveOptions, IPatchOptions, IPostOptions, IPutOptions } from "../Models/IRequestOptions";
+import { IActionOptions, ICopyOptions, IDeleteOptions, IGetActionOptions, ILoadCollectionOptions, ILoadOptions, IMoveOptions, IPatchOptions, IPostOptions, IPutOptions } from "../Models/IRequestOptions";
 import { SchemaStore } from "../Schemas/SchemaStore";
 import { ConstantContent } from "./ConstantContent";
 import { ODataUrlBuilder } from "./ODataUrlBuilder";
@@ -202,6 +203,27 @@ export class Repository implements IDisposable {
                 targetPath: options.targetPath,
             }),
         });
+    }
+
+    /**
+     * Retrieves a list of content actions for a specified content
+     * @param options Options for fetching the Custom Actions
+     */
+    public async getActions(options: IGetActionOptions): Promise<{d: IActionModel[]}> {
+        const contextPath = PathHelper.getContentUrl(options.idOrPath);
+        const path = PathHelper.joinPaths(this.configuration.repositoryUrl,
+            this.configuration.oDataToken,
+            contextPath,
+            "Actions",
+            options.scenario ? `$scenario=${options.scenario}` : "");
+        const response = await this.fetch(`${path}`, {
+            credentials: "include",
+            method: "GET",
+        });
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return await response.json();
     }
 
     /**

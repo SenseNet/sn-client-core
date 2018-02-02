@@ -145,3 +145,18 @@ export interface IActionOptions<TBody> {
      */
     body: TBody;
 }
+
+/**
+ * Options for fetching content actions
+ */
+export interface IGetActionOptions {
+    /**
+     * The content Id or path
+     */
+    idOrPath: string | number;
+
+    /**
+     * An optional Scenario parameter
+     */
+    scenario?: string;
+}
