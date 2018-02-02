@@ -17,7 +17,7 @@ export class Security {
      * @returns {Promise<IPermissionResponseModel>} A promise with a response model
      */
     public setPermissionInheritance = (idOrPath: string | number, inheritance: Inheritance) =>
-        this.repository.executeAction<{ inheritance: Inheritance }, IPermissionResponseModel>({
+        this.repository.executeAction<{ inheritance: Inheritance }, void>({
             name: "SetPermissions",
             idOrPath,
             method: "POST",
@@ -33,8 +33,8 @@ export class Security {
      * @param {PermissionRequestBody} permissionRequestBody inheritance: break or unbreak
      * @returns {Promise<IPermissionResponseModel>} A promise with a response model
      */
-    public setPermissions = (idOrPath: string | number, permissionRequestBody: PermissionRequestBody): Promise<IPermissionResponseModel> =>
-        this.repository.executeAction<{ entryList: PermissionRequestBody }, IPermissionResponseModel>({
+    public setPermissions = (idOrPath: string | number, permissionRequestBody: PermissionRequestBody): Promise<void> =>
+        this.repository.executeAction<{ entryList: PermissionRequestBody }, void>({
             name: "SetPermissions",
             idOrPath,
             method: "POST",
@@ -44,23 +44,34 @@ export class Security {
         })
 
     /**
-     * Gets permissions for the requested content. If no identity is given, all the permission entries will be returned.
-     *
+     * Gets all permissions for the requested content.
      * Required permissions to call this action: See permissions.
      * @param {string | number} contentIdOrPath The path or id for the content
-     * @param {string | undefined} identityPath Optional path of the identity whose permissions must be returned (user, group or organizational unit)
      * @returns {Promise<IPermissionResponseModel>} A promise with the permission response
      */
-    public getPermissions = (contentIdOrPath: string | number, identityPath?: string): Promise<IPermissionResponseModel> =>
+    public getAllPermissions = (contentIdOrPath: string | number): Promise<IPermissionResponseModel> =>
+        this.repository.executeAction<undefined, IPermissionResponseModel>({
+            idOrPath: contentIdOrPath,
+            name: "GetPermissions",
+            method: "GET",
+            body: undefined,
+        })
+
+    /**
+     * Gets all permissions for the requested content.
+     * Required permissions to call this action: See permissions.
+     * @param {string | number} contentIdOrPath The path or id for the content
+     * @returns {Promise<IPermissionResponseModel>} A promise with the permission response
+     */
+    public getPermissionsForIdentity = (contentIdOrPath: string | number, identityPath: string): Promise<IPermissionResponseModel> =>
         this.repository.executeAction<{ identity: string }, IPermissionResponseModel>({
             idOrPath: contentIdOrPath,
             name: "GetPermissions",
             method: "GET",
             body: {
-                identity: identityPath || "",
+                identity: identityPath,
             },
         })
-
     /**
      * Gets if the given user has the specified permissions for the requested content.
      *
