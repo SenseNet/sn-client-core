@@ -99,8 +99,8 @@ export class Repository implements IDisposable {
      * @param options Post request Options
      */
     public async post<TContentType extends IContent>(options: IPostOptions<TContentType>): Promise<IODataResponse<TContentType>> {
-        const params = ODataUrlBuilder.buildUrlParamString(this.configuration);
         const path = PathHelper.joinPaths(this.configuration.repositoryUrl, this.configuration.oDataToken, options.parentPath);
+        const params = ODataUrlBuilder.buildUrlParamString(this.configuration, options.oDataOptions);
         const postBody: Partial<TContentType> & {__ContentType: string, __ContentTemplate?: string} = Object.assign({}, options.content) as any;
         postBody.__ContentType = options.contentType;
         postBody.__ContentTemplate = options.contentTemplate;
@@ -121,9 +121,9 @@ export class Repository implements IDisposable {
      * @param options Options for the Patch request
      */
     public async patch<TContentType extends IContent>(options: IPatchOptions<TContentType>): Promise<IODataResponse<TContentType>> {
-        const params = ODataUrlBuilder.buildUrlParamString(this.configuration);
         const contentPath = PathHelper.getContentUrl(options.idOrPath);
         const path = PathHelper.joinPaths(this.configuration.repositoryUrl, this.configuration.oDataToken, contentPath);
+        const params = ODataUrlBuilder.buildUrlParamString(this.configuration, options.oDataOptions);
         const response = await this.fetch(`${path}?${params}`, {
             credentials: "include",
             method: "PATCH",
@@ -140,9 +140,9 @@ export class Repository implements IDisposable {
      * @param options Options for the Put request
      */
     public async put<TContentType extends IContent>(options: IPutOptions<TContentType>): Promise<IODataResponse<TContentType>> {
-        const params = ODataUrlBuilder.buildUrlParamString(this.configuration);
         const contentPath = PathHelper.getContentUrl(options.idOrPath);
         const path = PathHelper.joinPaths(this.configuration.repositoryUrl, this.configuration.oDataToken, contentPath);
+        const params = ODataUrlBuilder.buildUrlParamString(this.configuration, options.oDataOptions);
         const response = await this.fetch(`${path}?${params}`, {
             credentials: "include",
             method: "PUT",

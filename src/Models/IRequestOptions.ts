@@ -45,9 +45,20 @@ export interface IPostOptions<TContentType> {
      */
     content: Partial<TContentType>;
 
+    /**
+     * Type name for the content
+     */
     contentType: string;
 
+    /**
+     * An optional content template
+     */
     contentTemplate?: string;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -62,6 +73,11 @@ export interface IPatchOptions<TContentType> {
      * The content data to update
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -76,6 +92,11 @@ export interface IPutOptions<TContentType> {
      * The new content data
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
