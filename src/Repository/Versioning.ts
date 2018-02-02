@@ -16,7 +16,7 @@ export class Versioning {
      * @param {IODataParams<T> | undefined} oDataOptions optional OData options
      * @returns {Promise<IODataCollectionResponse<T>>} A promise that will be resolved with the versions
      */
-    public getVersions<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>): Promise<IODataCollectionResponse<T>> {
+    public getVersions<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>): Promise<IODataCollectionResponse<T>> {
         return this.repository.loadCollection<T>({
             path: PathHelper.joinPaths(
                 this.repository.configuration.repositoryUrl,
@@ -33,7 +33,7 @@ export class Versioning {
      * @param {IODataParams<T>} oDataOptions Optional OData options
      * @returns {Promise<T>} A promise that will be resolved with the checked out version of the content item
      */
-    public checkOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>) {
+    public checkOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<undefined, IODataResponse<T>>({
             name: "Checkout",
             idOrPath,
@@ -50,8 +50,8 @@ export class Versioning {
      * @param {IODataParams<T>} oDataOptions Optional OData options
      * @returns {Promise<T>} A promise that will be resolved with the new checked in version of the content item
      */
-    public checkIn = <T extends IContent = IContent>(idOrPath: number | string, checkInComments: string = "", oDataOptions: IODataParams<T>) =>
-        this.repository.executeAction<{ checkInComments: string }, IODataResponse<T>>({
+    public checkIn<T extends IContent = IContent>(idOrPath: number | string, checkInComments: string = "", oDataOptions?: IODataParams<T>) {
+        return this.repository.executeAction<{ checkInComments: string }, IODataResponse<T>>({
             name: "CheckIn",
             idOrPath,
             method: "POST",
@@ -59,7 +59,8 @@ export class Versioning {
                 checkInComments,
             },
             oDataOptions,
-        })
+        });
+    }
 
     /**
      * Performs an undo check out operation on a content item
@@ -67,7 +68,7 @@ export class Versioning {
      * @param {IODataParams<T>} oDataOptions Optional OData options
      * @returns {Promise<T>} A promise that will be resolved with the previous checked in version of the content item
      */
-    public undoCheckOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>) {
+    public undoCheckOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<undefined, IODataResponse<T>>({
             name: "UndoCheckOut",
             idOrPath,
@@ -83,8 +84,8 @@ export class Versioning {
      * @param {IODataParams<T>} oDataOptions Optional OData options
      * @returns {Promise<T>} A promise that will be resolved with the previous checked in version of the content item
      */
-    public forceUndoCheckOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>) {
-        this.repository.executeAction<undefined, IODataResponse<T>>({
+    public forceUndoCheckOut<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>) {
+        return this.repository.executeAction<undefined, IODataResponse<T>>({
             name: "ForceUndoCheckout",
             idOrPath,
             method: "POST",
@@ -99,7 +100,7 @@ export class Versioning {
      * @param oDataOptions Optional OData options
      * @returns {Promise<IODataResponse<T>>} A promise that will be resolved when the operation finished
      */
-    public approve<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>) {
+    public approve<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<undefined, IODataResponse<T>>({
              name: "Approve",
              idOrPath,
@@ -115,7 +116,7 @@ export class Versioning {
      * @param oDataOptions Optional OData options
      * @returns {Promise<IODataResponse<T>>} A promise that will be resolved when the operation finished
      */
-    public reject<T extends IContent = IContent>(idOrPath: number | string, rejectReason: string = "", oDataOptions: IODataParams<T>) {
+    public reject<T extends IContent = IContent>(idOrPath: number | string, rejectReason: string = "", oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<{rejectReason: string}, IODataResponse<T>>({
              name: "Reject",
              idOrPath,
@@ -133,7 +134,7 @@ export class Versioning {
      * @param oDataOptions Optional OData options
      * @returns {Promise<IODataResponse<T>>} A promise that will be resolved when the operation finished
      */
-    public publish<T extends IContent = IContent>(idOrPath: number | string, oDataOptions: IODataParams<T>) {
+    public publish<T extends IContent = IContent>(idOrPath: number | string, oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<undefined, IODataResponse<T>>({
              name: "Publish",
              idOrPath,
@@ -149,7 +150,7 @@ export class Versioning {
      * @param oDataOptions Optional OData options
      * @returns {Promise<IODataResponse<T>>} A promise that will be resolved when the operation finished
      */
-    public restoreVersion<T extends IContent = IContent>(idOrPath: number | string, version: string = "", oDataOptions: IODataParams<T>) {
+    public restoreVersion<T extends IContent = IContent>(idOrPath: number | string, version: string = "", oDataOptions?: IODataParams<T>) {
         return this.repository.executeAction<{version: string}, IODataResponse<T>>({
              name: "RestoreVersion",
              idOrPath,
