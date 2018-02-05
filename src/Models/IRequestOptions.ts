@@ -1,3 +1,4 @@
+import { Repository } from "../index";
 import { IContent } from "./IContent";
 import { IODataParams } from "./IODataParams";
 /**
@@ -195,6 +196,12 @@ export interface IGetActionOptions {
  * Options for uploading content
  */
 export interface IUploadOptions<T> {
+
+    /**
+     * The specified sensenet ECM Repository instance
+     */
+    repository: Repository;
+
     /**
      * The name of the content type, e.g.: File
      */
@@ -245,4 +252,24 @@ export interface IUploadTextOptions<T> extends IUploadOptions<T> {
      * The name of the File object
      */
     fileName: string;
+}
+
+/**
+ * Options for uploading content from a drop event
+ */
+export interface IUploadFromEventOptions<T extends IContent> extends IUploadOptions<T> {
+
+    /**
+     * The path of the parent content item
+     */
+    parentPath: string;
+
+    /**
+     * The DragEvent to work with. File data will be extracted from it's 'dataTransfer' item.
+     */
+    event: DragEvent;
+    /**
+     * Option if folders should be created as well.
+     */
+    createFolders: boolean;
 }

@@ -1,8 +1,7 @@
 import { PathHelper } from "@sensenet/client-utils";
 import { IContent } from "../Models/IContent";
-import { IUploadFileOptions, IUploadOptions, IUploadTextOptions } from "../Models/IRequestOptions";
+import { IUploadFileOptions, IUploadFromEventOptions, IUploadOptions, IUploadTextOptions } from "../Models/IRequestOptions";
 import { Repository } from "../Repository/Repository";
-import { UploadResponse } from "./UploadResponse";
 
 /**
  * Helper class for uploading content into the sensenet ECM Repository
@@ -11,37 +10,53 @@ export class Upload {
 
     /**
      * Uploads a specified text as a binary file
-     * @param {Repository} repo The repository to use
      * @param {IUploadTextOptions} options The additional options
      */
-    public static async textAsFile<T extends IContent>(repo: Repository, options: IUploadTextOptions<T>): Promise<T> {
+    public static async textAsFile<T extends IContent>(options: IUploadTextOptions<T>): Promise<T> {
         const uploadFileOptions = Object.assign({ file: new File([options.text], options.fileName) }, options) as IUploadFileOptions<T>;
-        return await this.file(repo, uploadFileOptions);
+        return await this.file(uploadFileOptions);
     }
 
     /**
      * Uploads a specified file into a sensenet ECM Repository
-     * @param {Repository} repo The Repository to use
      * @param {IUploadFileOptions} options The additional upload options
      */
-    public static async file<T extends IContent>(repo: Repository, options: IUploadFileOptions<T>): Promise<T> {
+    public static async file<T extends IContent>(options: IUploadFileOptions<T>): Promise<T> {
 
-        if (this.isChunkedUploadNeeded(options.file, repo)) {
-            return await this.uploadChunked(repo, options);
+        if (this.isChunkedUploadNeeded(options.file, options.repository)) {
+            return await this.uploadChunked(options);
         }
-        return await this.uploadNonChunked(repo, options);
+        return await this.uploadNonChunked(options);
     }
 
+    /**
+     * Returns if a chunked upload is needed for a specified file
+     * @param {File} file The File object
+     * @param {Repository} repo The sensenet ECM Repository
+     */
     public static isChunkedUploadNeeded(file: File, repo: Repository): boolean {
-        return file.size <= repo.configuration.chunkSize;
+        return file.size >= repo.configuration.chunkSize;
     }
 
-    private static async uploadNonChunked<T>(repo: Repository, options: IUploadFileOptions<T>): Promise<T> {
-        const uploadPath = PathHelper.joinPaths(repo.configuration.repositoryUrl, repo.configuration.oDataToken, options.parentPath, "upload");
+    private static getUploadUrl(options: IUploadFileOptions<any>) {
+        return PathHelper.joinPaths(options.repository.configuration.repositoryUrl, options.repository.configuration.oDataToken, PathHelper.getContentUrl(options.parentPath), "upload");
+    }
+
+    private static getFormDataFromOptions(options: IUploadFileOptions<any>) {
         const formData = new FormData();
-        formData.append(options.file.name, options.file);
         formData.append("ChunkToken", "0*0*False*False");
-        const response = await repo.fetch(uploadPath, {
+        formData.append("FileName", options.file.name);
+        formData.append("Overwrite", options.overwrite.toString());
+        formData.append("PropertyName", options.binaryPropertyName.toString());
+        formData.append("FileLength", options.file.size.toString());
+        formData.append("ContentType", options.contentTypeName.toString());
+        return formData;
+    }
+
+    private static async uploadNonChunked<T>(options: IUploadFileOptions<T>): Promise<T> {
+        const formData = this.getFormDataFromOptions(options);
+        formData.append(options.file.name, options.file);
+        const response = await options.repository.fetch(this.getUploadUrl(options), {
             credentials: "include",
             method: "POST",
             body: formData,
@@ -52,19 +67,21 @@ export class Upload {
         return await response.json();
     }
 
-    private static async uploadChunked<T>(repo: Repository, options: IUploadFileOptions<T>): Promise<T> {
-        const chunkCount = Math.floor(options.file.size / repo.configuration.chunkSize);
+    private static async uploadChunked<T>(options: IUploadFileOptions<T>): Promise<T> {
+        const chunkCount = Math.floor(options.file.size / options.repository.configuration.chunkSize);
+        const uploadPath = this.getUploadUrl(options);
 
         /** initial chunk data and request */
-        const uploadPath = PathHelper.joinPaths(repo.configuration.repositoryUrl, repo.configuration.oDataToken, options.parentPath, "upload");
-        const formData = new FormData();
-        formData.append(options.file.name, options.file.slice(0, repo.configuration.chunkSize));
+        const formData = this.getFormDataFromOptions(options);
+        formData.append(options.file.name, options.file.slice(0, options.repository.configuration.chunkSize));
         formData.append("UseChunk", "true");
         formData.append("create", "1");
-        const initRequest = await repo.fetch(uploadPath, {
+        const initRequest = await options.repository.fetch(uploadPath, {
             body: formData,
+            credentials: "include",
+            method: "POST",
             headers: {
-                "Content-Range": `bytes 0-${repo.configuration.chunkSize - 1}/${options.file.size}`,
+                "Content-Range": `bytes 0-${options.repository.configuration.chunkSize - 1}/${options.file.size}`,
                 "Content-Disposition": `attachment; filename="${options.file.name}"`,
             },
         });
@@ -73,27 +90,100 @@ export class Upload {
             throw Error(initRequest.statusText);
         }
 
-        const chunkToken = await initRequest.json();
-        const resp = new UploadResponse(...chunkToken.split("*"));
+        const chunkToken = await initRequest.text();
 
         /** */
-        for (let i = 1; i < chunkCount; i++) {
-            const start = i * repo.configuration.chunkSize;
-            const end = Math.min(i * repo.configuration.chunkSize, options.file.size - 1);
+        for (let i = 0; i <= chunkCount; i++) {
+            const start = i * options.repository.configuration.chunkSize;
+            let end = start + options.repository.configuration.chunkSize;
+            end = end > options.file.size ? options.file.size : end;
+
+            const chunkFormData = new FormData();
             const chunkData = options.file.slice(start, end);
-            await this.sendChunk<T>(repo, uploadPath, chunkData, chunkToken, start, end, options.file.size, options.file.name);
+
+            chunkFormData.append("FileLength", options.file.size.toString());
+            chunkFormData.append("ChunkToken", chunkToken);
+            chunkFormData.append(options.file.name, chunkData);
+
+            await options.repository.fetch(uploadPath, {
+                body: chunkFormData,
+                credentials: "include",
+                method: "POST",
+                headers: {
+                    "Content-Range": `bytes ${start}-${end - 1}/${options.file.size}`,
+                    "Content-Disposition": `attachment; filename="${options.file.name}"`,
+                },
+            });
         }
 
         return null as any;
     }
 
-    private static async sendChunk<T>(repo: Repository, uploadPath: string, chunk: Blob, chunkToken: string, chunkStart: number, chunkEnd: number, fileSize: number, fileName: string) {
-        await repo.fetch(uploadPath, {
-            body: {
-                UseChunk: true,
-                FileLength: fileSize,
-                ChunkToken: chunkToken,
-            },
+    private static async webkitFileHandler<T extends IContent>(fileEntry: WebKitFileEntry, contentPath: string, options: IUploadOptions<T>) {
+        await new Promise((resolve, reject) => {
+            fileEntry.file(async (f) => {
+                await this.file({
+                    file: f as any as File,
+                    ...options,
+                    parentPath: contentPath,
+                });
+                resolve();
+            }, (err) => reject(err));
         });
+    }
+
+    private static async webkitDirectoryHandler<T extends IContent>(directory: WebKitDirectoryEntry, contentPath: string, options: IUploadOptions<T>) {
+
+        const folder =  await options.repository.post({
+            content: {
+                Name: directory.name,
+
+            },
+            parentPath: contentPath,
+            contentType: "Folder",
+        });
+        const dirReader = directory.createReader();
+        await new Promise((res) => {
+            dirReader.readEntries(async (items) => {
+                await this.webkitItemListHandler<T>(items as any, folder.d.Path, true, options);
+                res();
+            });
+        });
+    }
+
+    private static async webkitItemListHandler<T extends IContent>(items: Array<WebKitFileEntry | WebKitDirectoryEntry>, contentPath: string, createFolders: boolean, options: IUploadOptions<T>) {
+        // tslint:disable-next-line:forin
+        for (const index in items) {
+            if (createFolders && items[index].isDirectory) {
+                await this.webkitDirectoryHandler(items[index] as WebKitDirectoryEntry, contentPath, options);
+            }
+            if (items[index].isFile) {
+                await this.webkitFileHandler(items[index] as WebKitFileEntry, contentPath, options);
+            }
+        }
+    }
+
+    /**
+     * Uploads content from a specified Drop Event
+     * @param { IUploadOptions } options Options for the Upload request
+     */
+    public static async fromDropEvent<T extends IContent = IContent>(options: IUploadFromEventOptions<T>) {
+        if ((window as any).webkitRequestFileSystem) {
+            const entries: Array<WebKitFileEntry | WebKitDirectoryEntry> =
+                [].map.call(options.event.dataTransfer.items, (i: DataTransferItem) => i.webkitGetAsEntry());
+
+            await this.webkitItemListHandler<T>(entries, options.parentPath, options.createFolders, options);
+        } else {
+            // Fallback for non-webkit browsers.
+            [].forEach.call(options.event.dataTransfer.files, async (f: File) => {
+                if (f.type === "file") {
+                    return await Upload.file({
+                        file: f,
+                        ...options as IUploadOptions<T>,
+                    });
+                }
+            });
+        }
+
     }
 }
