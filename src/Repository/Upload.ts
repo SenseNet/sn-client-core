@@ -4,6 +4,36 @@ import { IUploadFileOptions, IUploadFromEventOptions, IUploadOptions, IUploadTex
 import { Repository } from "../Repository/Repository";
 
 /**
+ * Response model for Uploads
+ */
+export interface IUploadResponse {
+    /**
+     * Identifier for the uploaded content
+     */
+    Id: number;
+    /**
+     * Uploaded file lengthj
+     */
+    Length: number;
+    /**
+     * Content name
+     */
+    Name: string;
+    /**
+     * URL for thumbnail view
+     */
+    Thumbnail_url: string;
+    /**
+     * Created content type
+     */
+    Type: string;
+    /**
+     * Url for the created content
+     */
+    Url: string;
+}
+
+/**
  * Helper class for uploading content into the sensenet ECM Repository
  */
 export class Upload {
@@ -12,7 +42,7 @@ export class Upload {
      * Uploads a specified text as a binary file
      * @param {IUploadTextOptions} options The additional options
      */
-    public static async textAsFile<T extends IContent>(options: IUploadTextOptions<T>): Promise<T> {
+    public static async textAsFile<T extends IContent>(options: IUploadTextOptions<T>): Promise<IUploadResponse> {
         const uploadFileOptions = Object.assign({ file: new File([options.text], options.fileName) }, options) as IUploadFileOptions<T>;
         return await this.file(uploadFileOptions);
     }
@@ -21,7 +51,7 @@ export class Upload {
      * Uploads a specified file into a sensenet ECM Repository
      * @param {IUploadFileOptions} options The additional upload options
      */
-    public static async file<T extends IContent>(options: IUploadFileOptions<T>): Promise<T> {
+    public static async file<T extends IContent>(options: IUploadFileOptions<T>): Promise<IUploadResponse> {
 
         if (this.isChunkedUploadNeeded(options.file, options.repository)) {
             return await this.uploadChunked(options);
@@ -53,7 +83,7 @@ export class Upload {
         return formData;
     }
 
-    private static async uploadNonChunked<T>(options: IUploadFileOptions<T>): Promise<T> {
+    private static async uploadNonChunked<T>(options: IUploadFileOptions<T>): Promise<IUploadResponse> {
         const formData = this.getFormDataFromOptions(options);
         formData.append(options.file.name, options.file);
         const response = await options.repository.fetch(this.getUploadUrl(options), {
@@ -67,7 +97,7 @@ export class Upload {
         return await response.json();
     }
 
-    private static async uploadChunked<T>(options: IUploadFileOptions<T>): Promise<T> {
+    private static async uploadChunked<T>(options: IUploadFileOptions<T>) {
         const chunkCount = Math.floor(options.file.size / options.repository.configuration.chunkSize);
         const uploadPath = this.getUploadUrl(options);
 
@@ -91,6 +121,7 @@ export class Upload {
         }
 
         const chunkToken = await initRequest.text();
+        let lastResponseContent: IUploadResponse = {} as any;
 
         /** */
         for (let i = 0; i <= chunkCount; i++) {
@@ -105,7 +136,7 @@ export class Upload {
             chunkFormData.append("ChunkToken", chunkToken);
             chunkFormData.append(options.file.name, chunkData);
 
-            await options.repository.fetch(uploadPath, {
+            const lastResponse = await options.repository.fetch(uploadPath, {
                 body: chunkFormData,
                 credentials: "include",
                 method: "POST",
@@ -114,9 +145,15 @@ export class Upload {
                     "Content-Disposition": `attachment; filename="${options.file.name}"`,
                 },
             });
+            if (lastResponse.ok) {
+                lastResponseContent = await lastResponse.json();
+            } else {
+                throw Error(lastResponse.statusText);
+            }
         }
 
-        return null as any;
+        return lastResponseContent;
+
     }
 
     private static async webkitFileHandler<T extends IContent>(fileEntry: WebKitFileEntry, contentPath: string, options: IUploadOptions<T>) {
