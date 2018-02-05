@@ -43,7 +43,22 @@ export interface IPostOptions<TContentType> {
     /**
      * Content data to post. The content type is required.
      */
-    content: Partial<TContentType> & { Type: string };
+    content: Partial<TContentType>;
+
+    /**
+     * Type name for the content
+     */
+    contentType: string;
+
+    /**
+     * An optional content template
+     */
+    contentTemplate?: string;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -58,6 +73,11 @@ export interface IPatchOptions<TContentType> {
      * The content data to update
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -72,6 +92,11 @@ export interface IPutOptions<TContentType> {
      * The new content data
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -127,7 +152,7 @@ export interface ICopyOptions {
 /**
  * Options to call an odata action
  */
-export interface IActionOptions<TBody> {
+export interface IActionOptions<TBody, TContentType> {
     /**
      * The name of the odata action
      */
@@ -139,11 +164,31 @@ export interface IActionOptions<TBody> {
     /**
      * The context content for the action
      */
-    contextPath: string;
+    idOrPath: string | number;
     /**
      * Additional body parameters
      */
     body: TBody;
+
+    /**
+     * An OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
+}
+
+/**
+ * Options for fetching content actions
+ */
+export interface IGetActionOptions {
+    /**
+     * The content Id or path
+     */
+    idOrPath: string | number;
+
+    /**
+     * An optional Scenario parameter
+     */
+    scenario?: string;
 }
 
 /**
