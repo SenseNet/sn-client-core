@@ -170,7 +170,6 @@ export class Upload {
     }
 
     private static async webkitDirectoryHandler<T extends IContent>(directory: WebKitDirectoryEntry, contentPath: string, options: IUploadOptions<T>) {
-
         const folder =  await options.repository.post({
             content: {
                 Name: directory.name,
@@ -180,22 +179,22 @@ export class Upload {
             contentType: "Folder",
         });
         const dirReader = directory.createReader();
-        await new Promise((res) => {
+        await new Promise((resolve, reject) => {
             dirReader.readEntries(async (items) => {
                 await this.webkitItemListHandler<T>(items as any, folder.d.Path, true, options);
-                res();
-            });
+                resolve();
+            }, (err) => reject(err));
         });
     }
 
     private static async webkitItemListHandler<T extends IContent>(items: Array<WebKitFileEntry | WebKitDirectoryEntry>, contentPath: string, createFolders: boolean, options: IUploadOptions<T>) {
         // tslint:disable-next-line:forin
-        for (const index in items) {
-            if (createFolders && items[index].isDirectory) {
-                await this.webkitDirectoryHandler(items[index] as WebKitDirectoryEntry, contentPath, options);
+        for (const item of items) {
+            if (createFolders && item.isDirectory) {
+                await this.webkitDirectoryHandler(item as WebKitDirectoryEntry, contentPath, options);
             }
-            if (items[index].isFile) {
-                await this.webkitFileHandler(items[index] as WebKitFileEntry, contentPath, options);
+            if (item.isFile) {
+                await this.webkitFileHandler(item as WebKitFileEntry, contentPath, options);
             }
         }
     }

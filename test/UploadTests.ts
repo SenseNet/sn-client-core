@@ -145,7 +145,6 @@ export const uploadTests = describe("Upload", () => {
     describe("#fromDropEvent()", () => {
 
         it("should trigger an Upload request without webkitRequestFileSystem", (done: MochaDone) => {
-
             (global as any).window.webkitRequestFileSystem = undefined;
             const file = new File(["alma.txt"], "alma");
             Object.assign(file, { type: "file" });
@@ -200,6 +199,121 @@ export const uploadTests = describe("Upload", () => {
                 binaryPropertyName: "Binary",
                 contentTypeName: "File",
                 overwrite: true,
+            });
+        });
+
+        it("should fail with webkitRequestFileSystem if failed to read a file", (done: MochaDone) => {
+            (global as any).window = { webkitRequestFileSystem: () => { /**/ } };
+            const file = {
+                isFile: true,
+                file: (cb: (f: File) => void, err: (err: any) => void) => { err("File read fails here..."); },
+            };
+            Upload.fromDropEvent({
+                event: {
+                    dataTransfer: {
+                        items: [
+                            { webkitGetAsEntry: () => file },
+                        ],
+                    },
+                } as any,
+                parentPath: "Root/Example",
+                createFolders: true,
+                repository: repo,
+                binaryPropertyName: "Binary",
+                contentTypeName: "File",
+                overwrite: true,
+            }).catch((err) => {done(); });
+        });
+
+        it("should trigger a post when the dataTransfer contains folders", (done: MochaDone) => {
+            (global as any).window = { webkitRequestFileSystem: () => { /**/ } };
+
+            repo["fetchMethod"] = async () => ({
+                ok: true,
+                json: async () => ({d: {Path: "Root/Example" }}),
+            }as any);
+
+            let postHasCalled = false;
+            const uploadTrace = Trace.method({
+                object: repo,
+                method: repo.post,
+                onCalled: (c) => {
+                    uploadTrace.dispose();
+                    postHasCalled = true;
+                },
+            });
+            const directory = {
+                isFile: false,
+                isDirectory: true,
+                createReader: () => {
+                    return {
+                        readEntries: (cb: (entries: any) => void, err: (err: any) => void) => {
+                            cb([
+                                {
+                                    isFile: true,
+                                    isDirectory: false,
+                                    name: "ExampleDirectory",
+                                    file: (callback: (f: File) => void) => { callback(new File(["alma.txt"], "alma")); },
+                                },
+                            ]);
+                        },
+                    };
+                },
+            };
+            Upload.fromDropEvent({
+                event: {
+                    dataTransfer: {
+                        items: [
+                            { webkitGetAsEntry: () => directory },
+                        ],
+                    },
+                } as any,
+                parentPath: "Root/Example",
+                createFolders: true,
+                repository: repo,
+                binaryPropertyName: "Binary",
+                contentTypeName: "File",
+                overwrite: true,
+            }).then(() => {
+                expect(postHasCalled).to.be.eq(true);
+                done();
+            }).catch((err) => {
+                done(err);
+            });
+        });
+
+        it("should fail if there is an error reading folders", (done: MochaDone) => {
+            (global as any).window = { webkitRequestFileSystem: () => { /**/ } };
+
+            const directory = {
+                isFile: false,
+                isDirectory: true,
+                createReader: () => {
+                    return {
+                        readEntries: (cb: (entries: any) => void, err: (err: any) => void) => {
+                            err("Reading directories fails here...");
+                        },
+                    };
+                },
+            };
+            Upload.fromDropEvent({
+                event: {
+                    dataTransfer: {
+                        items: [
+                            { webkitGetAsEntry: () => directory },
+                        ],
+                    },
+                } as any,
+                parentPath: "Root/Example",
+                createFolders: true,
+                repository: repo,
+                binaryPropertyName: "Binary",
+                contentTypeName: "File",
+                overwrite: true,
+            }).then(() => {
+                done(Error("Should have failed"));
+            }).catch((err) => {
+                done();
             });
         });
     });
