@@ -1,3 +1,4 @@
+import { Repository } from "../index";
 import { IContent } from "./IContent";
 import { IODataParams } from "./IODataParams";
 /**
@@ -43,7 +44,22 @@ export interface IPostOptions<TContentType> {
     /**
      * Content data to post. The content type is required.
      */
-    content: Partial<TContentType> & { Type: string };
+    content: Partial<TContentType>;
+
+    /**
+     * Type name for the content
+     */
+    contentType: string;
+
+    /**
+     * An optional content template
+     */
+    contentTemplate?: string;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -58,6 +74,11 @@ export interface IPatchOptions<TContentType> {
      * The content data to update
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -72,6 +93,11 @@ export interface IPutOptions<TContentType> {
      * The new content data
      */
     content: Partial<TContentType>;
+
+    /**
+     * An optional OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
 }
 
 /**
@@ -127,7 +153,7 @@ export interface ICopyOptions {
 /**
  * Options to call an odata action
  */
-export interface IActionOptions<TBody> {
+export interface IActionOptions<TBody, TContentType> {
     /**
      * The name of the odata action
      */
@@ -144,4 +170,106 @@ export interface IActionOptions<TBody> {
      * Additional body parameters
      */
     body: TBody;
+
+    /**
+     * An OData Options object
+     */
+    oDataOptions?: IODataParams<TContentType>;
+}
+
+/**
+ * Options for fetching content actions
+ */
+export interface IGetActionOptions {
+    /**
+     * The content Id or path
+     */
+    idOrPath: string | number;
+
+    /**
+     * An optional Scenario parameter
+     */
+    scenario?: string;
+}
+
+/**
+ * Options for uploading content
+ */
+export interface IUploadOptions<T> {
+
+    /**
+     * The specified sensenet ECM Repository instance
+     */
+    repository: Repository;
+
+    /**
+     * The name of the content type, e.g.: File
+     */
+    contentTypeName: string;
+    /**
+     * Name of the binary property on the content, e.g.: Binary
+     */
+    binaryPropertyName: string;
+    /**
+     * Enable overwriting a file if already exists
+     */
+    overwrite: boolean;
+    /**
+     * Additional post body options
+     */
+    body?: any;
+
+    /**
+     * Additional OData options
+     */
+    odataOptions?: IODataParams<T>;
+    /**
+     * The path of the parent content
+     */
+    parentPath: string;
+}
+
+/**
+ * Options for uploading a File into the repository
+ */
+export interface IUploadFileOptions<T> extends IUploadOptions<T> {
+    /**
+     * The File instance
+     */
+    file: File;
+
+}
+
+/**
+ * Options for uploading a text as a binary file into the repository
+ */
+export interface IUploadTextOptions<T> extends IUploadOptions<T> {
+    /**
+     * The text to be uploaded
+     */
+    text: string;
+    /**
+     * The name of the File object
+     */
+    fileName: string;
+}
+
+/**
+ * Options for uploading content from a drop event
+ */
+export interface IUploadFromEventOptions<T extends IContent> extends IUploadOptions<T> {
+
+    /**
+     * The path of the parent content item
+     */
+    parentPath: string;
+
+    /**
+     * The DragEvent to work with. File data will be extracted from it's 'dataTransfer' item.
+     */
+    event: DragEvent;
+    /**
+     * Option if folders should be created as well.
+     */
+    createFolders: boolean;
 }
