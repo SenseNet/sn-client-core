@@ -262,7 +262,8 @@ export class Repository implements IDisposable {
     public versioning: Versioning = new Versioning(this);
 
     /**
-     * Reloads the Schemas from the sensenet backend with the GetSchemas custom action
+     * Reloads the content schemas from the sensenet backend
+     * @returns {Promise<void>} A promise that will be resolved / rejected based on the action success
      */
     public async reloadSchema() {
         const schemas = await this.executeAction<undefined, Schema[]>({
@@ -280,5 +281,6 @@ export class Repository implements IDisposable {
         public schemas: SchemaStore = new SchemaStore(),
     ) {
         this.configuration = new RepositoryConfiguration(config);
+        this.schemas.setSchemas(this.configuration.schemas);
     }
 }
