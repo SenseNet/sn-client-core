@@ -1,5 +1,5 @@
 import { IDisposable, PathHelper } from "@sensenet/client-utils";
-import { IActionModel } from "@sensenet/default-content-types";
+import { IActionModel, Schema } from "@sensenet/default-content-types";
 import { BypassAuthentication } from "../Authentication/BypassAuthentication";
 import { IAuthenticationService } from "../Authentication/IAuthenticationService";
 import { IContent } from "../Models/IContent";
@@ -260,6 +260,19 @@ export class Repository implements IDisposable {
      * Shortcut for versioning related custom actions
      */
     public versioning: Versioning = new Versioning(this);
+
+    /**
+     * Reloads the Schemas from the sensenet backend with the GetSchemas custom action
+     */
+    public async reloadSchema() {
+        const schemas = await this.executeAction<undefined, Schema[]>({
+            idOrPath: "Root",
+            name: "GetSchema",
+            method: "GET",
+            body: undefined,
+        });
+        this.schemas.setSchemas(schemas);
+    }
 
     constructor(
         config?: Partial<RepositoryConfiguration>,
