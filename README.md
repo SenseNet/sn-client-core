@@ -14,7 +14,7 @@ The library connects to a sensenet's [REST API](https://community.sensenet.com/d
 
 > Tested with the following **sensenet services** version: 
 > 
-> [![Sense/Net Services](https://img.shields.io/badge/sensenet-7.0.0%20tested-green.svg)](https://github.com/SenseNet/sensenet/releases/tag/v7.1.3)
+> [![Sense/Net Services](https://img.shields.io/badge/sensenet-7.1.3%20tested-green.svg)](https://github.com/SenseNet/sensenet/releases/tag/v7.1.3)
 
 ## Installation
 
