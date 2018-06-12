@@ -18,7 +18,7 @@ global.FormData = class {
     public append(...args: any[]) { /** */ }
 };
 
-export const uploadTests = describe("Upload", () => {
+export const uploadTests: Mocha.Suite = describe("Upload", () => {
     let repo: Repository;
 
     let mockAnswer: any;
