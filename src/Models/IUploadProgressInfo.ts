@@ -1,11 +1,13 @@
+import { IUploadResponse } from "../Repository/Upload";
+
 /**
  * Defines an upload progress info data model
  */
-export interface IUploadProgressInfo<T> {
+export interface IUploadProgressInfo {
     /**
      * Basic info about the created Content
      */
-    createdContent: T;
+    createdContent: IUploadResponse;
     /**
      * Total chunks count
      */
@@ -18,4 +20,9 @@ export interface IUploadProgressInfo<T> {
      * Flag that indicates if the upload has been completed
      */
     completed: boolean;
+
+    /**
+     * If an error has been occured, it will be persisted in the progress info
+     */
+    error?: any;
 }
