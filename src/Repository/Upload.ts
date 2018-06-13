@@ -1,4 +1,5 @@
 import { PathHelper } from "@sensenet/client-utils";
+import { v1 } from "uuid";
 import { IContent } from "../Models/IContent";
 import { IUploadFileOptions, IUploadFromEventOptions, IUploadFromFileListOptions, IUploadOptions, IUploadTextOptions } from "../Models/IRequestOptions";
 import { Repository } from "../Repository/Repository";
@@ -84,6 +85,14 @@ export class Upload {
     }
 
     private static async uploadNonChunked<T>(options: IUploadFileOptions<T>): Promise<IUploadResponse> {
+        const guid = v1();
+
+        options.progressObservable && options.progressObservable.setValue({
+            guid,
+            file: options.file,
+            completed: false,
+        });
+
         const formData = this.getFormDataFromOptions(options);
         formData.append(options.file.name, options.file);
         const response = await options.repository.fetch(this.getUploadUrl(options), {
@@ -94,6 +103,8 @@ export class Upload {
         if (!response.ok) {
             const error = response.json();
             options.progressObservable && options.progressObservable.setValue({
+                guid,
+                file: options.file,
                 chunkCount: 1,
                 uploadedChunks: 1,
                 completed: true,
@@ -106,6 +117,8 @@ export class Upload {
         const uploadResponse: IUploadResponse = await response.json();
 
         options.progressObservable && options.progressObservable.setValue({
+            guid,
+            file: options.file,
             chunkCount: 1,
             uploadedChunks: 1,
             completed: true,
@@ -116,6 +129,17 @@ export class Upload {
 
     private static async uploadChunked<T>(options: IUploadFileOptions<T>) {
         const chunkCount = Math.floor(options.file.size / options.repository.configuration.chunkSize);
+
+        const guid = v1();
+
+        options.progressObservable && options.progressObservable.setValue({
+            guid,
+            file: options.file,
+            completed: false,
+            chunkCount,
+            uploadedChunks: 0,
+        });
+
         const uploadPath = this.getUploadUrl(options);
 
         /** initial chunk data and request */
@@ -165,14 +189,18 @@ export class Upload {
             if (lastResponse.ok) {
                 lastResponseContent = await lastResponse.json();
                 options.progressObservable && options.progressObservable.setValue({
+                    guid,
+                    file: options.file,
                     chunkCount,
                     uploadedChunks: i,
-                    completed: i < chunkCount,
+                    completed: i === chunkCount,
                     createdContent: lastResponseContent,
                 });
             } else {
                 const error = await lastResponse.json();
                 options.progressObservable && options.progressObservable.setValue({
+                    guid,
+                    file: options.file,
                     chunkCount,
                     uploadedChunks: i,
                     completed: i === chunkCount,
@@ -275,13 +303,14 @@ export class Upload {
                     currentPath = pathToCreate;
                 }
             }
-            for (const file of Array.from(options.fileList)) {
+
+            await Promise.all(Array.from(options.fileList).map(async (file) => {
                 await this.file({
                     ...options as IUploadOptions<T>,
                     parentPath: PathHelper.joinPaths(options.parentPath, PathHelper.getParentPath(file.webkitRelativePath)),
                     file,
                 });
-            }
+            }));
         } else {
             const { fileList, createFolders, ...uploadOptions } = options;
             for (const file of Array.from(options.fileList)) {
