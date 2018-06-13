@@ -263,11 +263,16 @@ export class Upload {
         if (options.createFolders) {
             const directories = new Set(Array.from(options.fileList).map((f) => PathHelper.getParentPath(f.webkitRelativePath)));
             const directoriesBySegments = Array.from(directories).map((d) => PathHelper.getSegments(d));
+            const createdDirectories = new Set<string>();
             for (const directory of directoriesBySegments) {
                 let currentPath = options.parentPath;
                 for (const segment of directory) {
-                    await this.webkitDirectoryHandler({ name: segment } as WebKitDirectoryEntry, options.parentPath, options as IUploadOptions<T>, false);
-                    currentPath = PathHelper.joinPaths(currentPath, segment);
+                    const pathToCreate = PathHelper.joinPaths(currentPath, segment);
+                    if (!createdDirectories.has(pathToCreate)) {
+                        await this.webkitDirectoryHandler({ name: segment } as WebKitDirectoryEntry, currentPath, options as IUploadOptions<T>, false);
+                    }
+                    createdDirectories.add(pathToCreate);
+                    currentPath = pathToCreate;
                 }
             }
             for (const file of Array.from(options.fileList)) {
