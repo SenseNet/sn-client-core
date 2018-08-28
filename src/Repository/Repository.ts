@@ -15,6 +15,19 @@ import { Security } from "./Security";
 import { Versioning } from "./Versioning";
 
 /**
+ * Defines an extended error message instance that contains an original error instance, a response and a parsed JSON body from the response
+ */
+export type ExtendedError = Error & { body: any, response: Response};
+
+/**
+ * Type guard to check if an error is extended with a response and a parsed body
+ * @param e The error to check
+ */
+export const isExtendedError = (e: Error): e is ExtendedError => {
+    return (e as ExtendedError).response ? true : false;
+};
+
+/**
  * Class that can be used as a main entry point to manipulate a sensenet content repository
  */
 export class Repository implements IDisposable {
@@ -55,8 +68,26 @@ export class Repository implements IDisposable {
         }
         return await this.fetchMethod(info, init || {
             credentials: "include",
-
         });
+    }
+
+    /**
+     * Gets a more meaningful error object from a specific response
+     * @param response The Response object to extract the message
+     */
+    public async getErrorFromResponse(response: Response): Promise<Error & { body: any, response: Response }> {
+        let msgFromBody: string = "";
+        let body: any = {};
+        try {
+            body = await response.json();
+            msgFromBody = body.error.message.value;
+        } catch (error) {
+            /** */
+        }
+        const error: Error & { body: any, response: Response } = new Error(msgFromBody || response.statusText) as any;
+        error.body = body;
+        error.response = response;
+        return error;
     }
 
     /**
@@ -73,7 +104,7 @@ export class Repository implements IDisposable {
             method: "GET",
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
@@ -90,7 +121,7 @@ export class Repository implements IDisposable {
             method: "GET",
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
 
@@ -113,7 +144,7 @@ export class Repository implements IDisposable {
             body: JSON.stringify(postBody),
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
@@ -132,7 +163,7 @@ export class Repository implements IDisposable {
             body: JSON.stringify(options.content),
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
@@ -151,7 +182,7 @@ export class Repository implements IDisposable {
             body: JSON.stringify(options.content),
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
@@ -226,7 +257,7 @@ export class Repository implements IDisposable {
             method: "GET",
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
@@ -246,7 +277,7 @@ export class Repository implements IDisposable {
             body: JSON.stringify(options.body),
         });
         if (!response.ok) {
-            throw Error(response.statusText);
+            throw (await this.getErrorFromResponse(response));
         }
         return await response.json();
     }
